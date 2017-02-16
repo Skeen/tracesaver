@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Simple Polylines</title>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+
+    var colors_object = {
+        aqua: "#00ffff",
+        azure: "#f0ffff",
+        beige: "#f5f5dc",
+        black: "#000000",
+        blue: "#0000ff",
+        brown: "#a52a2a",
+        cyan: "#00ffff",
+        darkblue: "#00008b",
+        darkcyan: "#008b8b",
+        darkgrey: "#a9a9a9",
+        darkgreen: "#006400",
+        darkkhaki: "#bdb76b",
+        darkmagenta: "#8b008b",
+        darkolivegreen: "#556b2f",
+        darkorange: "#ff8c00",
+        darkorchid: "#9932cc",
+        darkred: "#8b0000",
+        darksalmon: "#e9967a",
+        darkviolet: "#9400d3",
+        fuchsia: "#ff00ff",
+        gold: "#ffd700",
+        green: "#008000",
+        indigo: "#4b0082",
+        khaki: "#f0e68c",
+        lightblue: "#add8e6",
+        lightcyan: "#e0ffff",
+        lightgreen: "#90ee90",
+        lightgrey: "#d3d3d3",
+        lightpink: "#ffb6c1",
+        lightyellow: "#ffffe0",
+        lime: "#00ff00",
+        magenta: "#ff00ff",
+        maroon: "#800000",
+        navy: "#000080",
+        olive: "#808000",
+        orange: "#ffa500",
+        pink: "#ffc0cb",
+        purple: "#800080",
+        violet: "#800080",
+        red: "#ff0000",
+        silver: "#c0c0c0",
+        white: "#ffffff",
+        yellow: "#ffff00"
+    };
+    var colors = Object.values(colors_object);
+
+      // This example creates a 2-pixel-wide red polyline showing the path of William
+      // Kingsford Smith's first trans-Pacific flight between Oakland, CA, and
+      // Brisbane, Australia.
+
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+        // Center on user
+          center: {lat: 0, lng: 0},
+          mapTypeId: 'satellite',
+        // User control
+        // Figure zoom level from need
+          zoom: 2,
+              /*
+          disableDoubleClickZoom: true,
+          disableDefaultUI: true,
+          draggable: false,
+          panControl: false,
+          zoomControl: false,
+          scaleControl: false,
+          scrollwheel: false,
+          */
+        });
+
+        var lines = {};
+
+        var add = function(endpoint, raw_coords)
+        {
+            var positions = raw_coords.filter(function(elem)
+            {
+                return (elem[0] || elem[1]);
+            });
+            var latln = positions.map(function(elem)
+            {
+                return {lat: elem[0], lng: elem[1]};
+            });
+
+            var color = colors[Math.floor(Math.random()*colors.length)];
+
+            var flightPath = new google.maps.Polyline({
+              path: latln,
+              geodesic: false,
+              strokeColor: color,
+              strokeOpacity: 1.0,
+              strokeWeight: 2
+            });
+
+            flightPath.setMap(map);
+
+            /* // TODO: Add these, and if you do remove them too
+            // Add a new marker at the new plotted point on the polyline.
+            var last_element = latln[latln.length - 1];
+            var marker = new google.maps.Marker({
+                position: last_element,
+                title: '#' + endpoint,
+                map: map
+            });
+            */
+
+            console.log("Rendering", endpoint);
+            lines[endpoint] = flightPath;
+        }
+
+        var remove = function(endpoint)
+        {
+            console.log("Removing", endpoint);
+            lines[endpoint].setMap(null);
+        }
+
+        const socket = new WebSocket('ws://localhost:3000/com');
+
+        socket.addEventListener('open', function(event)
+        {
+            socket.send('refresh');
+        });
+
+        socket.addEventListener('message', function(event)
+        {
+            var json = JSON.parse(event.data);
+
+            var type = json.type;
+            if(type == "refresh")
+            {
+                var data = json.payload;
+                console.log(data);
+                Object.keys(data).forEach(function(endpoint)
+                {
+                    var raw_coords = data[endpoint];
+                    add(endpoint, raw_coords);
+                });
+                socket.send('update');
+            }
+            else if(type == 'add')
+            {
+                var endpoint = json.elem;
+                var coords = json.coords;
+                add(endpoint, coords);
+            }
+            else if(type == 'remove')
+            {
+                var endpoint = json.elem;
+                remove(endpoint);
+            }
+            else
+            {
+                alert("Unexpected server response!");
+                console.log(json);
+            }
+        });
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDBurXapr08D9NbGTPykFKCGTDWrtIgJTU&callback=initMap">
+    </script>
+  </body>
+</html>

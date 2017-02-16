@@ -1,0 +1,11 @@
+{
+  "name": "active_con",
+  "version": "0.0.1",
+  "description": "Fire events for an updated list of active connections.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
