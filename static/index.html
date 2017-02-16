@@ -78,10 +78,9 @@
         // Center on user
           center: {lat: 0, lng: 0},
           mapTypeId: 'satellite',
-        // User control
         // Figure zoom level from need
           zoom: 2,
-              /*
+        // Disable user control
           disableDoubleClickZoom: true,
           disableDefaultUI: true,
           draggable: false,
@@ -89,7 +88,6 @@
           zoomControl: false,
           scaleControl: false,
           scrollwheel: false,
-          */
         });
 
         var lines = {};
@@ -134,8 +132,33 @@
         var remove = function(endpoint)
         {
             console.log("Removing", endpoint);
-            lines[endpoint].setMap(null);
+            lines[endpoint].dead = true;
+            lines[endpoint].setOptions({strokeWeight: 10, strokeColor: "#FFFFFF"});
+            var timer = setInterval(function()
+            {
+                lines[endpoint].setOptions({strokeOpacity: lines[endpoint].strokeOpacity - 0.005});
+                if(lines[endpoint].strokeOpacity <= 0)
+                {
+                    lines[endpoint].setMap(null);
+                    clearInterval(timer);
+                }
+            }, 10);
         }
+
+        setInterval(function()
+        {
+            Object.keys(lines).forEach(function(key)
+            {
+                if(lines[key].dead)
+                    return;
+
+                lines[key].setOptions({strokeOpacity: lines[key].strokeOpacity - 0.005});
+                if(lines[key].strokeOpacity <= 0.25)
+                {
+                    lines[key].setOptions({strokeOpacity: 0.25});
+                }
+            });
+        }, 200);
 
         const socket = new WebSocket('ws://localhost:3000/com');
 
