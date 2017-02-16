@@ -1,7 +1,10 @@
 tracesaver
 ==========
 
-Finds open connections using `netstat`, then `traceroute`'s all the hops it passes through, before geoIPing alll the hops, and plotting the result to a live updating webpage.
+1. Finds open connections using `netstat`.
+2. `traceroute`s all connections to find IPs of all hops.
+3. GeoIPs all hops to acquire a list of `(lat,lng)` coordinates.
+4. Plotting the coordinates to a live updating webpage.
 
 Example:
 
